@@ -1,0 +1,4 @@
+#!/bin/bash
+
+./mqtt-client -sixgill-ingress-address=http://sense-ingress-api-staging.sixgill.run -sixgill-ingress-api-key=01BWHNJHFCZXDVDYPTK8080WC1 -mqtt-topic=/sensors $@
+
