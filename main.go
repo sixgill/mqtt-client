@@ -125,8 +125,8 @@ func main() {
 	// wait / block on those signals
 	<-exitSignal
 
-	// indicate successful cleanup
-	log.Println("bye")
+	// indicate cleanup
+	log.Println("cleaning up")
 
 	// unsubscribe from mqtt topic
 	if token := c.Unsubscribe(*mqttTopic); token.Wait() && token.Error() != nil {
@@ -138,6 +138,7 @@ func main() {
 	c.Disconnect(250)
 
 	// free and clear!
+	log.Println("bye")
 }
 
 // DoRegistration registers this application with the sixgill api server
