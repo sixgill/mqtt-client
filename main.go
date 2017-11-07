@@ -24,12 +24,14 @@ var jwt string
 // default mqtt message handler
 var f MQTT.MessageHandler = func(client MQTT.Client, msg MQTT.Message) {
 
+	start := time.Now()
+
 	// send payload to sixgill Ingress API server
 	statusCode, err := PostEvent(*sixgillIngressAddress+"/v1/iot/events", jwt, msg.Payload())
 	if err != nil {
 		log.Println(err.Error())
 	}
-	log.Printf("TOPIC: %s MSG: %s STATUSCODE: %d\n", msg.Topic(), msg.Payload(), statusCode)
+	log.Printf("TOPIC: %s MSG: %s STATUSCODE: %d Duration: %s\n", msg.Topic(), msg.Payload(), statusCode, time.Since(start))
 
 }
 
@@ -199,7 +201,7 @@ func PutJwtToFile(jwt string) error {
 // PostEvent POSTs the event to the ingress API server using the jwt
 func PostEvent(url, jwt string, event []byte) (int, error) {
 
-	request := `{"data":{` + string(event) + `}}`
+	request := string(event)
 	response := &pb.RegistrationResponse{}
 	resp, err := resty.R().
 		SetHeader("Content-Type", "application/json").
