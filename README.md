@@ -14,7 +14,7 @@ This runs on a gateway, subscribes to certain MQTT topics on localhost, then sen
 
 ## Usage
 
-From the gatewaty, either 
+From the gateway, either 
 
 `./demo`
 
@@ -24,6 +24,6 @@ or
 
 if you need more control.
 
-Do `./mqtt-client -help' or `./demo -help` for help on the flags.
+Do `./mqtt-client -help` or `./demo -help` for help on the flags.
 
 
