@@ -15,6 +15,7 @@ import (
 
 	"github.com/rs/xid"
 	pb "github.com/sixgill/sense-ingress-api/proto"
+	"github.com/uudashr/iso8601"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 )
@@ -247,7 +248,10 @@ func ExtractNodeRedDatum(payload []byte) ([]byte, error) {
 	}
 
 	// now tease out our values for timestamp ...
-	data["timestamp"] = datum.([]interface{})[0]
+	seconds := int64(data["timestamp"].(float64)) / 1000
+	nanoseconds := (int64(data["timestamp"].(float64)) - (seconds * 1000)) * 1000000
+	// add one for elasticsearch
+	data["timestamp_iso8601"] = iso8601.Time(time.Unix(seconds, nanoseconds))
 
 	// and value
 	data["value"] = datum.([]interface{})[1]
