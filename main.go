@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"errors"
 	"flag"
 	"io/ioutil"
 	"log"
@@ -24,14 +26,18 @@ var jwt string
 // default mqtt message handler
 var f MQTT.MessageHandler = func(client MQTT.Client, msg MQTT.Message) {
 
-	start := time.Now()
-
-	// send payload to sixgill Ingress API server
-	statusCode, err := PostEvent(*sixgillIngressAddress+"/v1/iot/events", jwt, msg.Payload())
+	payload, err := ExtractNodeRedDatum(msg.Payload())
 	if err != nil {
 		log.Println(err.Error())
 	}
-	log.Printf("TOPIC: %s MSG: %s STATUSCODE: %d Duration: %s\n", msg.Topic(), msg.Payload(), statusCode, time.Since(start))
+	start := time.Now()
+
+	// send payload to sixgill Ingress API server
+	statusCode, err := PostEvent(*sixgillIngressAddress+"/v1/iot/events", jwt, payload)
+	if err != nil {
+		log.Println(err.Error())
+	}
+	log.Printf("TOPIC: %s MSG: %s STATUSCODE: %d Duration: %s\n", msg.Topic(), payload, statusCode, time.Since(start))
 
 }
 
@@ -212,4 +218,45 @@ func PostEvent(url, jwt string, event []byte) (int, error) {
 		Post(url)
 
 	return resp.StatusCode(), err
+}
+
+// ExtractNodeRedDatum adds a `timestamp` and `value` field based on the elements of Node-Red's `datum` field if that field is present
+func ExtractNodeRedDatum(payload []byte) ([]byte, error) {
+
+	// extract datum field
+	var data map[string]interface{}
+	err := json.Unmarshal([]byte(payload), &data)
+	if err != nil {
+		return payload, errors.New("unable to unmarshal payload")
+	}
+
+	datum, present := data["datum"]
+	if !present {
+		log.Println("no datum present")
+		return payload, nil // not an error, just return the payload
+	}
+
+	// throw error if `timestamp`` field already exists
+	if _, present := data["timestamp"]; present {
+		return payload, errors.New("timestamp field already present")
+	}
+
+	// throw error if `value`` field already exists
+	if _, present := data["value"]; present {
+		return payload, errors.New("value field already present")
+	}
+
+	// now tease out our values for timestamp ...
+	data["timestamp"] = datum.([]interface{})[0]
+
+	// and value
+	data["value"] = datum.([]interface{})[1]
+
+	// marshal with added elements
+	augmentedPayload, err := json.Marshal(data)
+	if err != nil {
+		return payload, errors.New("unable to marshal new json")
+	}
+
+	return augmentedPayload, nil // FTM
 }
