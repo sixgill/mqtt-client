@@ -221,7 +221,7 @@ func PostEvent(url, jwt string, event []byte) (int, error) {
 	return resp.StatusCode(), err
 }
 
-// ExtractNodeRedDatum adds a `timestamp` and `value` field based on the elements of Node-Red's `datum` field if that field is present
+// ExtractNodeRedDatum adds a `timestamp` and `sensor_value` field based on the elements of Node-Red's `datum` field if that field is present
 func ExtractNodeRedDatum(payload []byte) ([]byte, error) {
 
 	// extract datum field
@@ -242,9 +242,9 @@ func ExtractNodeRedDatum(payload []byte) ([]byte, error) {
 		return payload, errors.New("timestamp field already present")
 	}
 
-	// throw error if `value`` field already exists
-	if _, present := data["value"]; present {
-		return payload, errors.New("value field already present")
+	// throw error if `sensor_value`` field already exists
+	if _, present := data["sensor_value"]; present {
+		return payload, errors.New("sensor_value field already present")
 	}
 
 	// now tease out our values for timestamp ...
@@ -253,8 +253,8 @@ func ExtractNodeRedDatum(payload []byte) ([]byte, error) {
 	nanoseconds := (int64(timestamp) - (seconds * 1000)) * 1000000
 	data["timestamp_iso8601"] = iso8601.Time(time.Unix(seconds, nanoseconds))
 
-	// and value
-	data["value"] = datum.([]interface{})[1]
+	// and sensor_value
+	data["sensor_value"] = datum.([]interface{})[1]
 
 	// marshal with added elements
 	augmentedPayload, err := json.Marshal(data)
