@@ -248,9 +248,9 @@ func ExtractNodeRedDatum(payload []byte) ([]byte, error) {
 	}
 
 	// now tease out our values for timestamp ...
-	seconds := int64(data["timestamp"].(float64)) / 1000
-	nanoseconds := (int64(data["timestamp"].(float64)) - (seconds * 1000)) * 1000000
-	// add one for elasticsearch
+	timestamp := datum.([]interface{})[0].(float64)
+	seconds := int64(timestamp) / 1000
+	nanoseconds := (int64(timestamp) - (seconds * 1000)) * 1000000
 	data["timestamp_iso8601"] = iso8601.Time(time.Unix(seconds, nanoseconds))
 
 	// and value
