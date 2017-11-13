@@ -14,6 +14,8 @@ This runs on a gateway, subscribes to certain MQTT topics on localhost, then sen
 
 ## Usage
 
+Before proceeding, the `sixgill-ingress-api-key` will need to be appropriately changed in the `demo` script for the first case below or supplied to `mqtt-client` directly for the second case.
+
 From the gateway, either 
 
 `./demo`
@@ -24,6 +26,5 @@ or
 
 if you need more control.
 
-Do `./mqtt-client -help` or `./demo -help` for help on the flags.
-
+Do `./demo -help` or `./mqtt-client -help` for help on the flags.
 
