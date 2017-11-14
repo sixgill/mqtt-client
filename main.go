@@ -33,8 +33,8 @@ var f MQTT.MessageHandler = func(client MQTT.Client, msg MQTT.Message) {
 	}
 	start := time.Now()
 
-	// send payload to sixgill Ingress API server
-	statusCode, err := PostEvent(*sixgillIngressAddress+"/v1/iot/events", jwt, payload)
+	// send payload to sixgill Sense Ingress API server
+	statusCode, err := PostEvent(*senseIngressAddress+"/v1/iot/events", jwt, payload)
 	if err != nil {
 		log.Println(err.Error())
 	}
@@ -42,7 +42,7 @@ var f MQTT.MessageHandler = func(client MQTT.Client, msg MQTT.Message) {
 
 }
 
-var sixgillIngressAddress *string
+var senseIngressAddress *string
 
 func main() {
 
@@ -52,8 +52,8 @@ func main() {
 	mqttBrokerAddress := flag.String("mqtt-broker-address", "localhost", "IP address of the MQTT broker")
 	mqttBrokerPort := flag.String("mqtt-broker-port", "1883", "broker's port")
 	mqttTopic := flag.String("mqtt-topic", "", "MQTT topic")
-	sixgillIngressAddress = flag.String("sixgill-ingress-address", "", "IP address of the Sixgill Ingress API server")
-	sixgillIngressAPIKey := flag.String("sixgill-ingress-api-key", "", "API key for Sixgill Ingress API server")
+	senseIngressAddress = flag.String("sense-ingress-address", "", "IP address of the Sixgill Sense Ingress API server")
+	senseIngressAPIKey := flag.String("sense-ingress-api-key", "", "API key for Sixgill Sense Ingress API server")
 	forceRegister := flag.Bool("force-register", false, "force registration (to update a bad JWT, for instance)")
 	flag.Parse()
 
@@ -63,15 +63,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	// if no sixgill-ingress-address specified
-	if len(*sixgillIngressAddress) == 0 {
-		log.Println("no Sixgill Ingress API server address specified (-sixgill-ingress-address)")
+	// if no sense-ingress-address specified
+	if len(*senseIngressAddress) == 0 {
+		log.Println("no Sixgill Sense Ingress API server address specified (-sense-ingress-address)")
 		os.Exit(1)
 	}
 
-	// if no sixgill-ingress-api-key specified
-	if len(*sixgillIngressAPIKey) == 0 {
-		log.Println("no Sixgill Ingress API key specified (-sixgill-ingress-api-key)")
+	// if no sense-ingress-api-key specified
+	if len(*senseIngressAPIKey) == 0 {
+		log.Println("no Sixgill Sense Ingress API key specified (-sense-ingress-api-key)")
 		os.Exit(1)
 	}
 
@@ -80,8 +80,8 @@ func main() {
 	if *forceRegister || err != nil {
 		log.Println("doing registration (no jwt file present or -force-register specified)")
 		// do registration
-		url := *sixgillIngressAddress + "/v1/registration"
-		statusCode, registrationResponse, err := DoRegistration(url, *sixgillIngressAPIKey)
+		url := *senseIngressAddress + "/v1/registration"
+		statusCode, registrationResponse, err := DoRegistration(url, *senseIngressAPIKey)
 		if err != nil {
 			log.Println("unable to do registration (with error): " + err.Error())
 			os.Exit(1)
@@ -150,22 +150,8 @@ func main() {
 	log.Println("bye")
 }
 
-// DoRegistration registers this application with the sixgill api server
+// DoRegistration registers this application with the SixgillsSense API server
 func DoRegistration(url, apiKey string) (int, pb.RegistrationResponse, error) {
-
-	// curl -X POST "http://sense-ingress-api-staging.sixgill.run/v1/registration"  -d '{
-	// 	"apiKey":"01BWHNJHFCZXDVDYPTK8080WC1",
-	// 	"properties":{
-	// 	  "timestamp":1509038692,
-	// 	  "manufacturer":"Apple",
-	// 	  "model":"advantech",
-	// 	  "os":"wrlinux",
-	// 	  "osVersion":"7.0.0.13",
-	// 	  "softwareVersion":"sixgill-mqtt-v0.1",
-	// 	  "type":"wrlinux",
-	// 	  "sensors":["temperature","humidity"]
-	//   }
-	// }'
 
 	request := &pb.RegistrationRequest{
 		ApiKey: apiKey,
@@ -175,7 +161,7 @@ func DoRegistration(url, apiKey string) (int, pb.RegistrationResponse, error) {
 			Model:           "Advantech",
 			Os:              "wrlinux",
 			OsVersion:       "7.0.0.13",
-			SoftwareVersion: "sixgill-mqtt-v0.1",
+			SoftwareVersion: "sense-mqtt-client-v0.1",
 			Type:            "wrlinux",
 			Sensors:         []string{"temperature", "humidity"},
 		},
