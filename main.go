@@ -177,7 +177,7 @@ func main() {
 	log.Println("bye")
 }
 
-// DoRegistration registers this application with the SixgillsSense API server
+// DoRegistration registers this application with the Sixgill Sense API server
 func DoRegistration(url, apiKey string) (int, pb.RegistrationResponse, error) {
 
 	request := &pb.RegistrationRequest{
@@ -246,7 +246,6 @@ func ExtractNodeRedDatum(payload []byte) ([]byte, error) {
 
 	datum, present := data["datum"]
 	if !present {
-		log.Println("no datum present")
 		return payload, nil // not an error, just return the payload
 	}
 
@@ -272,10 +271,10 @@ func ExtractNodeRedDatum(payload []byte) ([]byte, error) {
 	// marshal with added elements
 	augmentedPayload, err := json.Marshal(data)
 	if err != nil {
-		return payload, errors.New("unable to marshal new json")
+		return payload, err
 	}
 
-	return augmentedPayload, nil // FTM
+	return augmentedPayload, nil
 }
 
 // GetConfig gets the configuration parameters from the specified json file
