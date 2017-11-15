@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
+	"os/user"
 	"syscall"
 	"time"
 
@@ -19,8 +21,6 @@ import (
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 )
-
-const jwtFile string = "./jwt"
 
 var jwt string
 
@@ -44,44 +44,70 @@ var f MQTT.MessageHandler = func(client MQTT.Client, msg MQTT.Message) {
 
 var senseIngressAddress *string
 
+// Config contains all of our parameters
+type Config struct {
+	MqttBrokerAddress   string `json:"mqtt-broker-address"`   // IP address of the MQTT broker
+	MqttBrokerPort      string `json:"mqtt-broker-port"`      // broker's port
+	MqttTopic           string `json:"mqtt-topic"`            // MQTT topic
+	SenseIngressAddress string `json:"sense-ingress-address"` // IP address of the Sixgill Sense Ingress API server
+	SenseIngressAPIKey  string `json:"sense-ingress-api-key"` // API key for Sixgill Sense Ingress API server
+}
+
 func main() {
 
 	var err error
 
-	// get flags
-	mqttBrokerAddress := flag.String("mqtt-broker-address", "localhost", "IP address of the MQTT broker")
-	mqttBrokerPort := flag.String("mqtt-broker-port", "1883", "broker's port")
-	mqttTopic := flag.String("mqtt-topic", "", "MQTT topic")
-	senseIngressAddress = flag.String("sense-ingress-address", "", "IP address of the Sixgill Sense Ingress API server")
-	senseIngressAPIKey := flag.String("sense-ingress-api-key", "", "API key for Sixgill Sense Ingress API server")
-	forceRegister := flag.Bool("force-register", false, "force registration (to update a bad JWT, for instance)")
+	user, err := user.Current()
+	if err != nil {
+		log.Println("unable to get current user's home directory:", err.Error())
+		os.Exit(1)
+	}
+	userHomeDir := user.HomeDir
+	jwtFileName := userHomeDir + "/.sense/mqtt-client-jwt"
+	configFileName := userHomeDir + "/.sense/mqtt-client-conf.json"
+	// get configuration values from config file
+	config, err := GetConfig(configFileName)
+	if err != nil {
+		log.Println("unable to read configuration file `"+configFileName+"`:", err.Error())
+		os.Exit(1)
+	}
+	fmt.Println(config)
+
+	senseIngressAddress = &config.SenseIngressAddress
+
+	// mqttBrokerAddress := flag.String("mqtt-broker-address", "localhost", "IP address of the MQTT broker")
+	// mqttBrokerPort := flag.String("mqtt-broker-port", "1883", "broker's port")
+	// mqttTopic := flag.String("mqtt-topic", "", "MQTT topic")
+	// senseIngressAddress = flag.String("sense-ingress-address", "", "IP address of the Sixgill Sense Ingress API server")
+	// senseIngressAPIKey := flag.String("sense-ingress-api-key", "", "API key for Sixgill Sense Ingress API server")
+	forceRegister := flag.Bool("force-register", false, "force registration (to update a bad JWT, for instance), then quit")
 	flag.Parse()
 
 	// if no topic specified
-	if len(*mqttTopic) == 0 {
-		log.Println("no mqtt topic specified (-mqtt-topic)")
+	if len(config.MqttTopic) == 0 {
+		log.Println("no mqtt topic specified (mqtt-topic)")
 		os.Exit(1)
 	}
 
 	// if no sense-ingress-address specified
-	if len(*senseIngressAddress) == 0 {
-		log.Println("no Sixgill Sense Ingress API server address specified (-sense-ingress-address)")
+	if len(config.SenseIngressAddress) == 0 {
+		log.Println("no Sixgill Sense Ingress API server address specified (sense-ingress-address)")
 		os.Exit(1)
 	}
 
 	// if no sense-ingress-api-key specified
-	if len(*senseIngressAPIKey) == 0 {
-		log.Println("no Sixgill Sense Ingress API key specified (-sense-ingress-api-key)")
+	if len(config.SenseIngressAPIKey) == 0 {
+		log.Println("no Sixgill Sense Ingress API key specified (sense-ingress-api-key)")
 		os.Exit(1)
 	}
 
 	// fetch any existing JWT
-	jwt, err = GetJwtFromFile()
+	jwt, err = GetJwtFromFile(jwtFileName)
 	if *forceRegister || err != nil {
 		log.Println("doing registration (no jwt file present or -force-register specified)")
 		// do registration
-		url := *senseIngressAddress + "/v1/registration"
-		statusCode, registrationResponse, err := DoRegistration(url, *senseIngressAPIKey)
+		url := config.SenseIngressAddress + "/v1/registration"
+		statusCode, registrationResponse, err := DoRegistration(url, config.SenseIngressAPIKey)
 		if err != nil {
 			log.Println("unable to do registration (with error): " + err.Error())
 			os.Exit(1)
@@ -94,18 +120,19 @@ func main() {
 		jwt = registrationResponse.Token
 
 		// save JWT for next time
-		err = PutJwtToFile(jwt)
+		err = PutJwtToFile(jwt, jwtFileName)
 		if err != nil {
 			log.Println("unable to write JWT: " + err.Error())
 		}
 
+		os.Exit(0)
 	} else {
 		log.Println("got jwt from file")
 	}
 
 	log.Println("setting up mqtt broker")
 	// set up mqtt broker for specified address and port
-	opts := MQTT.NewClientOptions().AddBroker("tcp://" + *mqttBrokerAddress + ":" + *mqttBrokerPort)
+	opts := MQTT.NewClientOptions().AddBroker("tcp://" + config.MqttBrokerAddress + ":" + config.MqttBrokerPort)
 
 	// set a unique mqtt client id (duplicates will stall all parties with that id)
 	opts.SetClientID("mqtt-client-" + xid.New().String())
@@ -120,10 +147,10 @@ func main() {
 
 	// subscribe to the mqtt topic
 	// TODO: subscribe to multiple topics
-	token := c.Subscribe(*mqttTopic, 0, nil)
+	token := c.Subscribe(config.MqttTopic, 0, nil)
 	token.Wait()
 	if token.Error() != nil {
-		log.Println("unable to subscribe to topic '"+*mqttTopic+"':", token.Error())
+		log.Println("unable to subscribe to topic '"+config.MqttTopic+"':", token.Error())
 		os.Exit(1)
 	}
 
@@ -138,8 +165,8 @@ func main() {
 	log.Println("cleaning up")
 
 	// unsubscribe from mqtt topic
-	if token := c.Unsubscribe(*mqttTopic); token.Wait() && token.Error() != nil {
-		log.Println("unable to unsubscribe from topic '"+*mqttTopic+"'", token.Error())
+	if token := c.Unsubscribe(config.MqttTopic); token.Wait() && token.Error() != nil {
+		log.Println("unable to unsubscribe from topic '"+config.MqttTopic+"'", token.Error())
 		os.Exit(1)
 	}
 
@@ -179,16 +206,16 @@ func DoRegistration(url, apiKey string) (int, pb.RegistrationResponse, error) {
 }
 
 // GetJwtFromFile gets the previously stored JWT from the file
-func GetJwtFromFile() (string, error) {
+func GetJwtFromFile(jwtFile string) (string, error) {
 	jwt, err := ioutil.ReadFile(jwtFile)
 	log.Println("read from jwt file")
 	return string(jwt), err
 }
 
 // PutJwtToFile puts the JWT into the file
-func PutJwtToFile(jwt string) error {
+func PutJwtToFile(jwt, jwtFileName string) error {
 	log.Println("writing to jwt file")
-	return ioutil.WriteFile(jwtFile, []byte(jwt), 0644)
+	return ioutil.WriteFile(jwtFileName, []byte(jwt), 0644)
 }
 
 // PostEvent POSTs the event to the ingress API server using the jwt
@@ -249,4 +276,22 @@ func ExtractNodeRedDatum(payload []byte) ([]byte, error) {
 	}
 
 	return augmentedPayload, nil // FTM
+}
+
+// GetConfig gets the configuration parameters from the specified json file
+func GetConfig(fileName string) (Config, error) {
+
+	config := Config{}
+
+	file, err := os.Open(fileName)
+	if err != nil {
+		return config, err
+	}
+	defer file.Close()
+
+	decoder := json.NewDecoder(file)
+
+	err = decoder.Decode(&config)
+
+	return config, err
 }

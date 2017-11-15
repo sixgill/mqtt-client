@@ -2,7 +2,7 @@
 
 ## Description
 
-This runs on a gateway, subscribes to certain MQTT topics on localhost, then sends the received data to Sixgill Sense 2.0 via their ingress API.
+This process runs on a gateway, subscribes to certain MQTT topics on localhost, then sends the received data to Sixgill Sense 2.0 via their ingress API.
 
 ## Building
 
@@ -14,17 +14,19 @@ This runs on a gateway, subscribes to certain MQTT topics on localhost, then sen
 
 ## Usage
 
-Before proceeding, the `sixgill-ingress-api-key` will need to be appropriately changed in the `demo` script for the first case below or supplied to `mqtt-client` directly for the second case.
+- Change values in `mqtt-client-conf.json` as needed (parameters are described below), 
+- Copy the `mqtt-client-conf.json` file to `~/.sense/`, and 
+- Run `$ ./mqtt-client <optional flags>`
 
-From the gateway, either 
+Do `./mqtt-client -help` for help on the flags.
 
-`./demo`
+## Parameters 
 
-or
-
-`./mqtt-client <flags>`
-
-if you need more control.
-
-Do `./demo -help` or `./mqtt-client -help` for help on the flags.
+| Parameter | Default Value | Meaning |
+| --------: | :-----------: | :------ |
+| mqtt-broker-address | "localhost" | IP address of the MQTT broker |
+| mqtt-broker-port | "1883" | broker's port |
+| mqtt-topic | "" | MQTT topic |
+| sense-ingress-address | "" | IP address of the Sixgill Sense Ingress API server |
+| sense-ingress-api-key | "" | API key for Sixgill Sense Ingress API server |
 

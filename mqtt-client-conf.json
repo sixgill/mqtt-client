@@ -1,0 +1,7 @@
+{
+    "mqtt-broker-address":"localhost",
+    "mqtt-broker-port":"1883",
+    "mqtt-topic":"/sensors",
+    "sense-ingress-address":"http://sense-ingress-api-client-srv.sixgill.run",
+    "sense-ingress-api-key":"01BWHNJHFCZXDVDYPTK8080WC1"    
+}
