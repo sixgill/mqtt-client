@@ -12,7 +12,11 @@ This process runs on a gateway, subscribes to certain MQTT topics on localhost, 
 - scp the resulting binary to the target machine along with the `demo` helper script
 - modify the sixgill Ingress API key and any other parameters in `demo` if necessary
 
-## Usage
+## Getting
+
+Get the latest release from `https://github.com/sixgill/mqtt-client/releases`.
+
+## Using
 
 - Change values in `mqtt-client-conf.json` as needed (parameters are described below), 
 - Copy the `mqtt-client-conf.json` file to `~/.sense/`, and 
