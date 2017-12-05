@@ -14,7 +14,7 @@ This process runs on a gateway, subscribes to certain MQTT topics on localhost, 
 
 ## Getting
 
-Get the latest release from `https://github.com/sixgill/mqtt-client/releases`.
+Get the latest release from [here](https://github.com/sixgill/mqtt-client/releases).
 
 ## Using
 
