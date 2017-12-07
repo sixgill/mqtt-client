@@ -9,8 +9,8 @@ This process runs on a gateway, subscribes to certain MQTT topics on localhost, 
 - clone repository
 - `go get`
 - `GOOS=linux go build`
-- scp the resulting binary to the target machine along with the `demo` helper script
-- modify the sixgill Ingress API key and any other parameters in `demo` if necessary
+- scp the resulting binary to the target machine
+- modify the sixgill Ingress API key and any other parameters in `mqtt-client-conf.json` if necessary
 
 ## Getting
 
