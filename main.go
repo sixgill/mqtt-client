@@ -188,7 +188,7 @@ func DoRegistration(url, apiKey string) (int, pb.RegistrationResponse, error) {
 			Model:           "Advantech",
 			Os:              "wrlinux",
 			OsVersion:       "7.0.0.13",
-			SoftwareVersion: "sense-mqtt-client-v0.1",
+			SoftwareVersion: "sense-mqtt-client-v1.0",
 			Type:            "wrlinux",
 			Sensors:         []string{"temperature", "humidity"},
 		},
