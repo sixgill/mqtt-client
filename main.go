@@ -183,7 +183,7 @@ func DoRegistration(url, apiKey string) (int, pb.RegistrationResponse, error) {
 	request := &pb.RegistrationRequest{
 		ApiKey: apiKey,
 		Properties: &pb.Property{
-			Timestamp:       int64(time.Now().UTC().Second()),
+			Timestamp:       int64(time.Now().UTC().Unix()),
 			Manufacturer:    "Intel",
 			Model:           "Advantech",
 			Os:              "wrlinux",
