@@ -34,11 +34,15 @@ var f MQTT.MessageHandler = func(client MQTT.Client, msg MQTT.Message) {
 	start := time.Now()
 
 	// send payload to sixgill Sense Ingress API server
-	statusCode, err := PostEvent(*senseIngressAddress+"/v1/iot/events", jwt, payload)
+	statusCode, resp, err := PostEvent(*senseIngressAddress+"/v1/iot/events", jwt, payload)
 	if err != nil {
 		log.Println(err.Error())
 	}
-	log.Printf("TOPIC: %s MSG: %s STATUSCODE: %d Duration: %s\n", msg.Topic(), payload, statusCode, time.Since(start))
+	if statusCode != 204 {
+		log.Printf("TOPIC: %s MSG: %s STATUSCODE: %d Duration: %s Response: %s\n", msg.Topic(), payload, statusCode, time.Since(start), resp.String())
+	} else {
+		log.Printf("TOPIC: %s MSG: %s STATUSCODE: %d Duration: %s\n", msg.Topic(), payload, statusCode, time.Since(start))
+	}
 
 }
 
@@ -107,13 +111,13 @@ func main() {
 		log.Println("doing registration (no jwt file present or -force-register specified)")
 		// do registration
 		url := config.SenseIngressAddress + "/v1/registration"
-		statusCode, registrationResponse, err := DoRegistration(url, config.SenseIngressAPIKey)
+		statusCode, registrationResponse, resp, err := DoRegistration(url, config.SenseIngressAPIKey)
 		if err != nil {
 			log.Println("unable to do registration (with error): " + err.Error())
 			os.Exit(1)
 		}
 		if statusCode != 200 {
-			log.Println("unable to do registration (with status code): ", statusCode)
+			log.Println("unable to do registration (with status code, response): ", statusCode, resp.String())
 			os.Exit(1)
 		}
 
@@ -178,7 +182,7 @@ func main() {
 }
 
 // DoRegistration registers this application with the Sixgill Sense API server
-func DoRegistration(url, apiKey string) (int, pb.RegistrationResponse, error) {
+func DoRegistration(url, apiKey string) (int, pb.RegistrationResponse, resty.Response, error) {
 
 	request := &pb.RegistrationRequest{
 		ApiKey: apiKey,
@@ -193,6 +197,7 @@ func DoRegistration(url, apiKey string) (int, pb.RegistrationResponse, error) {
 			Sensors:         []string{"temperature", "humidity"},
 		},
 	}
+	fmt.Println("registration url, request:", url, ",", request)
 
 	response := &pb.RegistrationResponse{}
 	resp, err := resty.R().
@@ -202,7 +207,7 @@ func DoRegistration(url, apiKey string) (int, pb.RegistrationResponse, error) {
 		SetContentLength(true).
 		Post(url)
 
-	return resp.StatusCode(), *response, err
+	return resp.StatusCode(), *response, *resp, err
 }
 
 // GetJwtFromFile gets the previously stored JWT from the file
@@ -219,7 +224,7 @@ func PutJwtToFile(jwt, jwtFileName string) error {
 }
 
 // PostEvent POSTs the event to the ingress API server using the jwt
-func PostEvent(url, jwt string, event []byte) (int, error) {
+func PostEvent(url, jwt string, event []byte) (int, resty.Response, error) {
 
 	request := string(event)
 	response := &pb.RegistrationResponse{}
@@ -231,7 +236,7 @@ func PostEvent(url, jwt string, event []byte) (int, error) {
 		SetContentLength(true).
 		Post(url)
 
-	return resp.StatusCode(), err
+	return resp.StatusCode(), *resp, err
 }
 
 // ExtractNodeRedDatum adds a `timestamp` and `sensor_value` field based on the elements of Node-Red's `datum` field if that field is present
