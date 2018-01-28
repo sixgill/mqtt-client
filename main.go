@@ -61,6 +61,9 @@ func main() {
 
 	var err error
 
+	wd, err := os.Getwd()
+	fmt.Println("working directory: ", wd)
+
 	user, err := user.Current()
 	if err != nil {
 		log.Println("unable to get current user's home directory:", err.Error())
@@ -72,15 +75,15 @@ func main() {
 	// get configuration values from config file
 	config, err := GetConfig(configFileName)
 	if err != nil {
-		log.Println("unable to read configuration file `"+configFileName+"`:", err.Error())
+		log.Println("unable to read configuration file (1) `"+configFileName+"`:", err.Error())
 		// try the local directory instead
-		// don't update this one, since we need to write to it... jwtFileName = "./mqtt-client-jwt"
+		jwtFileName = "./mqtt-client-jwt"
 	        configFileName = "./mqtt-client-conf.json"
-	}
-	config, err = GetConfig(configFileName)
-        if err != nil {
-		log.Println("unable to read configuration file `"+configFileName+"`:", err.Error())
-		os.Exit(1)
+	        config, err = GetConfig(configFileName)
+	        if err != nil {
+	                log.Println("!unable to read configuration file (2) `"+configFileName+"`:", err.Error())
+        	        os.Exit(1)
+	        }
 	}
 	fmt.Printf("got config from '%s': %v\n", configFileName, config)
 
