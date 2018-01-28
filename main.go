@@ -16,7 +16,7 @@ import (
 	"gopkg.in/resty.v1"
 
 	"github.com/rs/xid"
-	pb "github.com/sixgill/sense-ingress-api/proto"
+	pb "github.com/sixgill/sense-pipeline/cmd/ingress/proto"
 	"github.com/uudashr/iso8601"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
@@ -73,9 +73,16 @@ func main() {
 	config, err := GetConfig(configFileName)
 	if err != nil {
 		log.Println("unable to read configuration file `"+configFileName+"`:", err.Error())
+		// try the local directory instead
+		// don't update this one, since we need to write to it... jwtFileName = "./mqtt-client-jwt"
+	        configFileName = "./mqtt-client-conf.json"
+	}
+	config, err = GetConfig(configFileName)
+        if err != nil {
+		log.Println("unable to read configuration file `"+configFileName+"`:", err.Error())
 		os.Exit(1)
 	}
-	fmt.Println(config)
+	fmt.Printf("got config from '%s': %v\n", configFileName, config)
 
 	senseIngressAddress = &config.SenseIngressAddress
 

@@ -1,2 +1,8 @@
-mqtt-client
+// need to commit this for snap-building mqtt-client
 jwt
+
+parts/
+prime/
+snap/
+stage/
+mqtt-client_*
